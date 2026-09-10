@@ -34,7 +34,8 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          caches.open(CACHE_NAME).then((c) => c.put("./index.html", res.clone()));
+          const resClone = res.clone(); // clone before the body is read anywhere
+          caches.open(CACHE_NAME).then((c) => c.put("./index.html", resClone));
           return res;
         })
         .catch(() => caches.match("./index.html"))
