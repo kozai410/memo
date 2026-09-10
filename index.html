@@ -1,0 +1,1023 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>手帳</title>
+<meta name="description" content="今日やること・やることリスト・予定・メモをまとめて管理する個人用プランナー">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2F3E82">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="手帳">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#EAEDEE;
+    --paper-alt:#DEE2E1;
+    --paper-card:#F4F5F2;
+    --paper-line:#C7CDCB;
+    --dot: rgba(28,32,51,0.07);
+    --ink:#1C2033;
+    --ink-soft:#5B5F72;
+    --ink-faint:#8A8D9C;
+    --accent:#2F3E82;
+    --accent-strong:#202C63;
+    --accent-soft:#E1E4F2;
+    --today:#C4592B;
+    --today-soft:#F6E3D6;
+    --warn:#9A7118;
+    --warn-soft:#F1E7CF;
+    --danger:#A83A3A;
+    --danger-soft:#F3DEDE;
+    --done:#4C7A5D;
+    --done-soft:#DEE8E0;
+    --shadow: rgba(28,32,51,0.10);
+    --sun:#B14A4A;
+    --sat:#2E5C8A;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#14161F;
+      --paper-alt:#1B1E2A;
+      --paper-card:#1F2230;
+      --paper-line:#2C2F40;
+      --dot: rgba(232,230,221,0.06);
+      --ink:#E8E6DD;
+      --ink-soft:#A3A6B8;
+      --ink-faint:#6D7086;
+      --accent:#8B95DE;
+      --accent-strong:#B7BEEE;
+      --accent-soft:#262B47;
+      --today:#E08A54;
+      --today-soft:#3A2A20;
+      --warn:#D9AC5C;
+      --warn-soft:#332B18;
+      --danger:#E08080;
+      --danger-soft:#3A2222;
+      --done:#7FB894;
+      --done-soft:#20301F;
+      --shadow: rgba(0,0,0,0.4);
+      --sun:#E08080;
+      --sat:#7FA8D9;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#14161F;
+    --paper-alt:#1B1E2A;
+    --paper-card:#1F2230;
+    --paper-line:#2C2F40;
+    --dot: rgba(232,230,221,0.06);
+    --ink:#E8E6DD;
+    --ink-soft:#A3A6B8;
+    --ink-faint:#6D7086;
+    --accent:#8B95DE;
+    --accent-strong:#B7BEEE;
+    --accent-soft:#262B47;
+    --today:#E08A54;
+    --today-soft:#3A2A20;
+    --warn:#D9AC5C;
+    --warn-soft:#332B18;
+    --danger:#E08080;
+    --danger-soft:#3A2222;
+    --done:#7FB894;
+    --done-soft:#20301F;
+    --shadow: rgba(0,0,0,0.4);
+    --sun:#E08080;
+    --sat:#7FA8D9;
+    color-scheme: dark;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background-color: var(--paper);
+    background-image: radial-gradient(var(--dot) 1.2px, transparent 1.2px);
+    background-size: 24px 24px;
+    color: var(--ink);
+    font-family: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  h1,h2,h3{ text-wrap: balance; margin: 0; font-family: "Zen Old Mincho", "Hiragino Mincho ProN", serif; font-weight: 600; color: var(--ink); }
+  .mono{ font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .label{ font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-faint); }
+  button{ font-family:inherit; }
+  input,textarea,select{ font-family:inherit; font-size:14px; color:var(--ink); background:var(--paper-card); border:1px solid var(--paper-line); border-radius:6px; padding:8px 10px; }
+  input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+  ::placeholder{ color: var(--ink-faint); }
+  a{ color: var(--accent); }
+
+  /* ---- Topbar ---- */
+  .topbar{
+    display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+    max-width:1300px; margin:0 auto; padding:26px 44px 18px;
+    border-bottom:1px solid var(--paper-line);
+  }
+  .brand{ display:flex; align-items:baseline; gap:10px; }
+  .brand h1{ font-size:22px; }
+  .topbar-date{ margin-left:auto; display:flex; align-items:baseline; gap:8px; color:var(--ink-soft); font-size:13px; }
+  .topbar-date .num{ font-size:18px; color:var(--ink); }
+
+  /* ---- Layout ---- */
+  .layout{
+    display:grid; grid-template-columns: 1fr 340px; grid-template-areas: "main cal";
+    gap:30px; max-width:1300px; margin:0 auto; padding:28px 44px 90px; align-items:start;
+  }
+  .main-col{ grid-area:main; display:flex; flex-direction:column; gap:36px; min-width:0; }
+  .cal-col{ grid-area:cal; position:sticky; top:22px; display:flex; flex-direction:column; gap:16px; }
+  @media (max-width: 980px){
+    .layout{ grid-template-columns:1fr; grid-template-areas: "cal" "main"; padding:20px 20px 60px; gap:28px; }
+    .cal-col{ position:static; }
+    .topbar{ padding:20px 20px 16px; }
+  }
+
+  section{ scroll-margin-top:20px; }
+  .sectionhead{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  .sectionhead h2{ font-size:22px; }
+  .sectionhead .sub{ color:var(--ink-soft); font-size:12.5px; }
+  .sectionhead .headctl{ margin-left:auto; display:flex; align-items:center; gap:8px; }
+
+  /* ---- Buttons ---- */
+  .btn{ display:inline-flex; align-items:center; gap:6px; border-radius:7px; border:1px solid var(--paper-line); background:var(--paper-card); color:var(--ink); padding:8px 13px; font-size:13px; cursor:pointer; white-space:nowrap; }
+  .btn:hover{ border-color: var(--accent); color: var(--accent-strong); }
+  .btn-primary{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  .btn-primary:hover{ background:var(--accent-strong); border-color:var(--accent-strong); color:#fff; }
+  .btn-ghost{ border-color:transparent; background:transparent; }
+  .btn-ghost:hover{ background:var(--paper-alt); border-color:transparent; }
+  .btn-danger:hover{ border-color:var(--danger); color:var(--danger); }
+  .btn-sm{ padding:5px 9px; font-size:12px; border-radius:6px; }
+  .iconbtn{ display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; border:1px solid transparent; background:transparent; color:var(--ink-soft); cursor:pointer; flex-shrink:0; }
+  .iconbtn:hover{ background:var(--paper-alt); color:var(--ink); }
+  .iconbtn svg{ width:15px; height:15px; }
+
+  /* ---- badges ---- */
+  .badge{ display:inline-flex; align-items:center; gap:4px; font-family:"JetBrains Mono",monospace; font-size:11.5px; padding:2px 8px; border-radius:5px; white-space:nowrap; }
+  .badge-normal{ background:var(--paper-line); color:var(--ink-soft); }
+  .badge-soon{ background:var(--warn-soft); color:var(--warn); }
+  .badge-today{ background:var(--today-soft); color:var(--today); }
+  .badge-overdue{ background:var(--danger-soft); color:var(--danger); }
+  .badge-done{ background:var(--done-soft); color:var(--done); }
+  .count-pill{ font-family:"JetBrains Mono",monospace; font-size:11px; background:var(--paper-line); color:var(--ink-soft); border-radius:999px; padding:1px 8px; }
+
+  /* ---- Today section ---- */
+  .today-stats{ display:flex; gap:22px; margin-bottom:18px; }
+  .stat .n{ font-size:24px; font-family:"JetBrains Mono",monospace; }
+  .stat .l{ font-size:11px; color:var(--ink-soft); }
+
+  .section-card{ background:var(--paper-card); border:1px solid var(--paper-line); border-radius:12px; padding:18px 20px; }
+  .section-card + .section-card{ margin-top:18px; }
+  .section-card-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+  .section-card-head h3{ font-size:15.5px; }
+
+  .todo-item{ display:flex; gap:12px; align-items:flex-start; padding:12px 4px; border-top:1px solid var(--paper-line); }
+  .todo-item:first-of-type{ border-top:none; }
+  .todo-check{ width:19px; height:19px; margin-top:2px; flex-shrink:0; border-radius:5px; border:1.5px solid var(--ink-faint); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--paper-card); }
+  .todo-check.checked{ background:var(--done); border-color:var(--done); }
+  .todo-check svg{ width:12px; height:12px; }
+  .todo-body{ flex:1; min-width:0; }
+  .todo-title-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .todo-title{ font-weight:600; font-size:14.5px; }
+  .todo-title.done{ text-decoration:line-through; color:var(--ink-faint); font-weight:500; }
+  .todo-content{ font-size:13px; color:var(--ink-soft); margin-top:3px; white-space:pre-wrap; }
+  .todo-meta{ display:flex; align-items:center; gap:6px; margin-top:7px; flex-wrap:wrap; }
+  .todo-actions{ display:flex; gap:4px; flex-shrink:0; }
+  .empty-note{ color:var(--ink-faint); font-size:13px; padding:10px 4px; }
+
+  .event-row{ display:flex; gap:12px; padding:12px 4px; border-top:1px solid var(--paper-line); align-items:flex-start; }
+  .event-row:first-of-type{ border-top:none; }
+  .event-time{ font-family:"JetBrains Mono",monospace; font-size:13px; color:var(--accent); width:48px; flex-shrink:0; padding-top:1px; }
+  .event-body{ flex:1; min-width:0; }
+  .event-title-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .event-title{ font-weight:600; font-size:14px; }
+  .event-content{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; white-space:pre-wrap; }
+
+  /* ---- Todo list (flat) section ---- */
+  .list-panel-head{ display:flex; align-items:center; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
+  .switch-label{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-soft); cursor:pointer; user-select:none; }
+
+  .todo-card{ background:var(--paper-card); border:1px solid var(--paper-line); border-left:3px solid var(--paper-line); border-radius:10px; padding:14px 16px; display:flex; flex-direction:column; gap:8px; }
+  .todo-card.today-flag{ border-left-color: var(--today); }
+  .todo-card.overdue-flag{ border-left-color: var(--danger); }
+  .todo-card.done-flag{ opacity:.62; }
+  .todo-card.archived{ border-left-color: var(--done); background: var(--done-soft); }
+  .todo-card-top{ display:flex; gap:10px; align-items:flex-start; }
+  .todo-card-controls{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:2px; }
+  .listcards{ display:flex; flex-direction:column; gap:10px; }
+
+  /* ---- Calendar (side widget) ---- */
+  .cal-widget{ background:var(--paper-card); border:1px solid var(--paper-line); border-radius:12px; padding:16px 16px 18px; }
+  .cal-nav{ display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .cal-nav h3{ font-size:15.5px; flex:1; text-align:center; }
+  .cal-grid{ display:grid; grid-template-columns: repeat(7,1fr); gap:4px; }
+  .cal-dow{ font-family:"JetBrains Mono",monospace; font-size:10px; text-align:center; color:var(--ink-soft); padding-bottom:4px; }
+  .cal-dow.sun{ color:var(--sun); } .cal-dow.sat{ color:var(--sat); }
+  .cal-cell{ background:var(--paper); border:1px solid var(--paper-line); border-radius:7px; min-height:40px; padding:4px 3px; cursor:pointer; display:flex; flex-direction:column; gap:3px; align-items:center; }
+  .cal-cell:hover{ border-color:var(--accent); }
+  .cal-cell.muted{ opacity:.35; }
+  .cal-cell.is-today{ box-shadow: inset 0 0 0 2px var(--today); }
+  .cal-cell.is-selected{ box-shadow: inset 0 0 0 2px var(--accent); }
+  .cal-daynum{ font-family:"JetBrains Mono",monospace; font-size:12px; }
+  .cal-daynum.sun{ color:var(--sun); } .cal-daynum.sat{ color:var(--sat); }
+  .cal-dots{ display:flex; gap:3px; }
+  .cal-dot{ width:5px; height:5px; border-radius:50%; }
+  .cal-dot.ev{ background:var(--accent); }
+  .cal-dot.dl{ background:var(--today); }
+
+  .daypanel{ background:var(--paper-card); border:1px solid var(--paper-line); border-radius:12px; padding:16px 18px; }
+  .daypanel h3{ font-size:16px; }
+  .daypanel .sub{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .daypanel-sec{ margin-top:14px; }
+  .daypanel-sec h4{ font-family:"Zen Kaku Gothic New",sans-serif; font-size:11.5px; letter-spacing:.04em; color:var(--ink-soft); font-weight:700; margin-bottom:8px; }
+  .daypanel .event-row, .daypanel .todo-item{ padding:8px 2px; }
+
+  /* ---- Memo ---- */
+  .memo-add{ background:var(--paper-card); border:1px solid var(--paper-line); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .memo-add input, .memo-add textarea{ width:100%; }
+  .memo-grid{ display:flex; flex-direction:column; gap:14px; }
+  .memo-card{ background:var(--paper-card); border:1px solid var(--paper-line); border-radius:10px; padding:14px 16px; display:flex; flex-direction:column; gap:8px; min-height:120px; }
+  .memo-card h4{ font-family:"Zen Old Mincho",serif; font-size:15.5px; font-weight:600; }
+  .memo-card p{ margin:0; font-size:13px; color:var(--ink-soft); white-space:pre-wrap; flex:1; }
+  .memo-card .foot{ display:flex; align-items:center; justify-content:space-between; margin-top:auto; }
+  .memo-card .updated{ font-family:"JetBrains Mono",monospace; font-size:10.5px; color:var(--ink-faint); }
+
+  textarea{ resize:vertical; min-height:64px; width:100%; }
+
+  /* ---- Modal ---- */
+  .overlay{ position:fixed; inset:0; background:rgba(20,22,31,.45); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; }
+  .overlay[hidden]{ display:none; }
+  .dialog{ background:var(--paper-card); border:1px solid var(--paper-line); border-radius:13px; width:100%; max-width:420px; padding:22px; box-shadow:0 20px 50px var(--shadow); max-height:88vh; overflow-y:auto; }
+  .dialog h3{ font-size:18px; margin-bottom:16px; }
+  .field{ display:flex; flex-direction:column; gap:5px; margin-bottom:13px; }
+  .field label{ font-size:12px; color:var(--ink-soft); font-weight:600; }
+  .field input, .field select, .field textarea{ width:100%; }
+  .dialog-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
+  .confirm-msg{ font-size:13.5px; color:var(--ink-soft); line-height:1.6; }
+
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+
+  /* ---- Sync status ---- */
+  .sync-ctl{ display:flex; align-items:center; gap:8px; }
+  .sync-status{ font-size:11.5px; color:var(--ink-soft); display:flex; align-items:center; gap:5px; }
+  .sync-dot{ width:7px; height:7px; border-radius:50%; background:var(--ink-faint); flex-shrink:0; }
+  .sync-dot.on{ background:var(--done); }
+  .sync-dot.busy{ background:var(--warn); }
+  .sync-dot.off{ background:var(--danger); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <h1>手帳</h1>
+    <div class="label">PERSONAL PLANNER</div>
+  </div>
+  <div class="topbar-date">
+    <span id="topbarDow"></span>
+    <span class="num mono" id="topbarDate"></span>
+  </div>
+  <div class="sync-ctl">
+    <span class="sync-status" id="syncStatus"><span class="sync-dot off" id="syncDot"></span><span id="syncLabel">未ログイン</span></span>
+    <button class="btn btn-sm" id="signInBtn">Googleでログインして同期</button>
+    <button class="btn btn-sm btn-ghost" id="signOutBtn" hidden>ログアウト</button>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="main-col">
+
+    <!-- 今日 -->
+    <section id="sec-today">
+      <div class="sectionhead">
+        <h2>今日やること</h2>
+        <span class="count-pill" id="countToday">0</span>
+        <div class="headctl">
+          <button class="btn btn-primary btn-sm" id="addTodayTodoBtn">+ タスクを追加</button>
+        </div>
+      </div>
+      <div class="today-stats">
+        <div class="stat"><div class="n mono" id="statTodo">0</div><div class="l">やること</div></div>
+        <div class="stat"><div class="n mono" id="statDone">0</div><div class="l">完了</div></div>
+        <div class="stat"><div class="n mono" id="statEvent">0</div><div class="l">予定</div></div>
+      </div>
+
+      <div class="section-card">
+        <div id="todayTodoList"></div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card-head">
+          <h3>今日の予定</h3>
+          <button class="btn btn-sm" id="addEventTodayBtn">+ 予定を追加</button>
+        </div>
+        <div id="todayEventList"></div>
+      </div>
+    </section>
+
+    <!-- やることリスト -->
+    <section id="sec-lists">
+      <div class="sectionhead">
+        <h2>やることリスト</h2>
+        <span class="count-pill" id="countList">0</span>
+        <div class="headctl">
+          <button class="btn btn-primary btn-sm" id="addTodoBtn">+ タスクを追加</button>
+        </div>
+      </div>
+      <div class="listcards" id="listCards"></div>
+    </section>
+
+    <!-- 予定 -->
+    <section id="sec-events">
+      <div class="sectionhead">
+        <h2>予定</h2>
+        <span class="count-pill" id="countEvents">0</span>
+        <div class="headctl">
+          <label class="switch-label"><input type="checkbox" id="showPastToggle"> 過去の予定も表示</label>
+          <button class="btn btn-primary btn-sm" id="addEventBtn">+ 予定を追加</button>
+        </div>
+      </div>
+      <div class="section-card">
+        <div id="eventsList"></div>
+      </div>
+    </section>
+
+    <!-- メモ -->
+    <section id="sec-memo">
+      <div class="sectionhead">
+        <h2>メモ</h2>
+        <span class="count-pill" id="countMemo">0</span>
+        <span class="sub">思いついたことを自由に書き留める</span>
+      </div>
+      <form class="memo-add" id="memoAddForm">
+        <input type="text" id="memoTitleInput" placeholder="タイトル" required>
+        <textarea id="memoContentInput" placeholder="内容を書く…" rows="3"></textarea>
+        <div style="display:flex; justify-content:flex-end;">
+          <button type="submit" class="btn btn-primary btn-sm">メモを追加</button>
+        </div>
+      </form>
+      <div class="memo-grid" id="memoGrid" style="margin-top:16px;"></div>
+    </section>
+
+    <!-- やったことリスト -->
+    <section id="sec-done">
+      <div class="sectionhead">
+        <h2>やったことリスト</h2>
+        <span class="count-pill" id="countDone">0</span>
+        <span class="sub">完了したタスクの記録です</span>
+      </div>
+      <div class="listcards" id="doneCards"></div>
+    </section>
+
+  </div>
+
+  <!-- カレンダー -->
+  <div class="cal-col">
+    <div class="cal-widget">
+      <div class="cal-nav">
+        <button class="iconbtn" id="calPrev">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <h3 class="mono" id="calMonthLabel"></h3>
+        <button class="iconbtn" id="calNext">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 4l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="cal-grid" id="calDowRow"></div>
+      <div class="cal-grid" id="calGrid" style="margin-top:4px;"></div>
+      <div style="margin-top:10px; text-align:right;">
+        <button class="btn btn-sm" id="calTodayBtn">今日に戻る</button>
+      </div>
+    </div>
+    <div class="daypanel" id="dayPanel"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="dialog" id="dialog" role="dialog" aria-modal="true"></div>
+</div>
+
+<!-- Firebase (optional cloud sync) — safe to remove these two lines if you skip sync setup -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("service-worker.js").catch(function(){});
+  });
+}
+</script>
+
+<script>
+(function(){
+  "use strict";
+  var STORAGE_KEY = "personal-planner-v2";
+  var DOW = ["日","月","火","水","木","金","土"];
+
+  function genId(){ return "id-" + Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function fmtDate(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  function todayStr(){ return fmtDate(new Date()); }
+  function parseDateStr(s){ var p=s.split("-").map(Number); return new Date(p[0],p[1]-1,p[2]); }
+  function addDays(s,n){ var d=parseDateStr(s); d.setDate(d.getDate()+n); return fmtDate(d); }
+  function mdLabel(s){ var d=parseDateStr(s); return (d.getMonth()+1)+"/"+d.getDate()+"("+DOW[d.getDay()]+")"; }
+  function escapeHtml(s){ return String(s==null?"":s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+  function classify(deadline, done){
+    if(done) return "done";
+    if(!deadline) return "none";
+    var t = todayStr();
+    if(deadline < t) return "overdue";
+    if(deadline === t) return "today";
+    if(deadline <= addDays(t,3)) return "soon";
+    return "normal";
+  }
+  var BADGE_LABEL = { overdue:"期限切れ", today:"今日まで", soon:"まもなく", normal:"", done:"完了", none:"" };
+  var BADGE_CLASS = { overdue:"badge-overdue", today:"badge-today", soon:"badge-soon", normal:"badge-normal", done:"badge-done", none:"" };
+
+  // A todo belongs in "today" when the user flagged it, or its deadline has arrived/passed.
+  function isTodayTodo(item){
+    if(item.today) return true;
+    return !!(item.deadline && item.deadline <= todayStr());
+  }
+  function isTodayEvent(ev){ return !!ev.date && ev.date <= todayStr(); }
+
+  function seedState(){
+    var t = todayStr();
+    return {
+      version: 2,
+      todos: [
+        { id: genId(), title: "サンプル: 資料を作成する", content: "これはサンプルのタスクです。自由に編集・削除してください。", deadline: addDays(t,3), today:false, done:false, createdAt:t, updatedAt:t },
+        { id: genId(), title: "サンプル: 買い物リストを作る", content: "", deadline: t, today:false, done:false, createdAt:t, updatedAt:t },
+        { id: genId(), title: "サンプル: このアプリを試してみる", content: "チェックを付けたり、締め切りを設定したりしてみましょう。", deadline: "", today:true, done:false, createdAt:t, updatedAt:t }
+      ],
+      events: [
+        { id: genId(), date: t, time:"10:00", title:"サンプル: ミーティング", content:"", createdAt:t },
+        { id: genId(), date: addDays(t,2), time:"", title:"サンプル: 通院", content:"", createdAt:t }
+      ],
+      memos: [
+        { id: genId(), title:"サンプル: メモ機能について", content:"ここに自由にメモを書けます。買い物メモ、アイデア、議事録などに。", updatedAt:t }
+      ],
+      calendarYear: parseDateStr(t).getFullYear(),
+      calendarMonth: parseDateStr(t).getMonth(),
+      selectedDate: t,
+      showPastEvents: false
+    };
+  }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return seedState();
+      var s = JSON.parse(raw);
+      if(!s || !s.todos) return seedState();
+      var t = todayStr();
+      if(s.calendarYear == null){ s.calendarYear = parseDateStr(t).getFullYear(); }
+      if(s.calendarMonth == null){ s.calendarMonth = parseDateStr(t).getMonth(); }
+      if(!s.selectedDate){ s.selectedDate = t; }
+      if(s.showPastEvents == null){ s.showPastEvents = false; }
+      return s;
+    }catch(e){ return seedState(); }
+  }
+  function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} cloudSync(); }
+
+  var state = load();
+
+  // ---------- Cloud sync (Firebase) ----------
+  // Fill in your Firebase project's config here (Firebase console > Project settings > General > Your apps > SDK setup and configuration).
+  var FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCVIHiPRerv6h13oKgh6wGjYD9hTyhb9q0",
+    authDomain: "memo-441f2.firebaseapp.com",
+    projectId: "memo-441f2",
+    storageBucket: "memo-441f2.firebasestorage.app",
+    messagingSenderId: "74751214485",
+    appId: "1:74751214485:web:5bcd97ecf257d6180cec9c"
+  };
+  var syncEnabled = !!(window.firebase && FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY");
+  var fbAuth, fbDb, fbUser = null, fbUnsub = null, applyingRemote = false, syncTimer = null;
+
+  function setSyncStatus(mode, label){
+    var dot = document.getElementById("syncDot");
+    var lbl = document.getElementById("syncLabel");
+    if(!dot) return;
+    dot.className = "sync-dot " + mode;
+    lbl.textContent = label;
+  }
+
+  if(syncEnabled){
+    firebase.initializeApp(FIREBASE_CONFIG);
+    fbAuth = firebase.auth();
+    fbDb = firebase.firestore();
+
+    document.getElementById("signInBtn").addEventListener("click", function(){
+      var provider = new firebase.auth.GoogleAuthProvider();
+      fbAuth.signInWithPopup(provider).catch(function(e){ alert("ログインに失敗しました: " + e.message); });
+    });
+    document.getElementById("signOutBtn").addEventListener("click", function(){
+      if(fbUnsub){ fbUnsub(); fbUnsub = null; }
+      fbAuth.signOut();
+    });
+
+    fbAuth.onAuthStateChanged(function(user){
+      fbUser = user;
+      if(fbUnsub){ fbUnsub(); fbUnsub = null; }
+      if(user){
+        document.getElementById("signInBtn").hidden = true;
+        document.getElementById("signOutBtn").hidden = false;
+        setSyncStatus("busy", "同期中…");
+        var docRef = fbDb.collection("planners").doc(user.uid);
+        fbUnsub = docRef.onSnapshot(function(snap){
+          if(snap.metadata.hasPendingWrites) return; // this is the echo of our own write, ignore it
+          if(snap.exists){
+            var remote = snap.data();
+            if(remote && remote.data){
+              applyingRemote = true;
+              state = JSON.parse(remote.data);
+              try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+              renderAll();
+              applyingRemote = false;
+            }
+          } else {
+            // first sync on this account: push current local state up as the initial cloud copy
+            docRef.set({ data: JSON.stringify(state), updatedAt: Date.now() });
+          }
+          setSyncStatus("on", "同期済み");
+        }, function(){
+          setSyncStatus("off", "同期エラー");
+        });
+      } else {
+        document.getElementById("signInBtn").hidden = false;
+        document.getElementById("signOutBtn").hidden = true;
+        setSyncStatus("off", "未ログイン");
+      }
+    });
+  } else {
+    document.getElementById("signInBtn").title = "Firebaseの設定が未完了です（index.html内のFIREBASE_CONFIGを設定してください）";
+    document.getElementById("signInBtn").disabled = true;
+  }
+
+  function cloudSync(){
+    if(!syncEnabled || !fbUser || applyingRemote) return;
+    clearTimeout(syncTimer);
+    setSyncStatus("busy", "同期中…");
+    syncTimer = setTimeout(function(){
+      fbDb.collection("planners").doc(fbUser.uid).set({ data: JSON.stringify(state), updatedAt: Date.now() })
+        .then(function(){ setSyncStatus("on", "同期済み"); })
+        .catch(function(){ setSyncStatus("off", "同期エラー"); });
+    }, 800);
+  }
+
+  // ---------- Modal ----------
+  var overlay = document.getElementById("overlay");
+  var dialog = document.getElementById("dialog");
+  function closeModal(){ overlay.hidden = true; dialog.innerHTML = ""; }
+  overlay.addEventListener("click", function(e){ if(e.target === overlay) closeModal(); });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape" && !overlay.hidden) closeModal(); });
+
+  function openConfirm(message, onConfirm, opts){
+    opts = opts || {};
+    dialog.innerHTML =
+      '<h3>'+escapeHtml(opts.title||"確認")+'</h3>' +
+      '<p class="confirm-msg">'+escapeHtml(message)+'</p>' +
+      '<div class="dialog-actions">' +
+      '<button class="btn" id="mCancel">キャンセル</button>' +
+      '<button class="btn '+(opts.danger?'btn-danger':'btn-primary')+'" id="mOk">'+escapeHtml(opts.okLabel||"実行")+'</button>' +
+      '</div>';
+    overlay.hidden = false;
+    dialog.querySelector("#mCancel").addEventListener("click", closeModal);
+    dialog.querySelector("#mOk").addEventListener("click", function(){ closeModal(); onConfirm(); });
+  }
+
+  function fieldHtml(f){
+    var id = "f_"+f.name;
+    if(f.type === "textarea"){
+      return '<div class="field"><label for="'+id+'">'+escapeHtml(f.label)+'</label><textarea id="'+id+'" rows="'+(f.rows||3)+'" placeholder="'+escapeHtml(f.placeholder||"")+'">'+escapeHtml(f.value||"")+'</textarea></div>';
+    }
+    if(f.type === "checkbox"){
+      return '<div class="field"><label class="switch-label" for="'+id+'"><input type="checkbox" id="'+id+'" '+(f.value?'checked':'')+'> '+escapeHtml(f.label)+'</label></div>';
+    }
+    return '<div class="field"><label for="'+id+'">'+escapeHtml(f.label)+'</label><input type="'+f.type+'" id="'+id+'" value="'+escapeHtml(f.value||"")+'" placeholder="'+escapeHtml(f.placeholder||"")+'" '+(f.required?'required':'')+'></div>';
+  }
+
+  function openForm(opts){
+    var html = '<h3>'+escapeHtml(opts.title)+'</h3><form id="mForm">';
+    opts.fields.forEach(function(f){ html += fieldHtml(f); });
+    html += '<div class="dialog-actions"><button type="button" class="btn" id="mCancel">キャンセル</button><button type="submit" class="btn btn-primary">'+escapeHtml(opts.submitLabel||"保存")+'</button></div></form>';
+    dialog.innerHTML = html;
+    overlay.hidden = false;
+    dialog.querySelector("#mCancel").addEventListener("click", closeModal);
+    var firstInput = dialog.querySelector("input,textarea,select");
+    if(firstInput) setTimeout(function(){ firstInput.focus(); },0);
+    dialog.querySelector("#mForm").addEventListener("submit", function(e){
+      e.preventDefault();
+      var values = {};
+      opts.fields.forEach(function(f){
+        var el = document.getElementById("f_"+f.name);
+        values[f.name] = f.type==="checkbox" ? el.checked : el.value.trim();
+      });
+      closeModal();
+      opts.onSubmit(values);
+    });
+  }
+
+  // ---------- Header date ----------
+  function renderHeaderDate(){
+    var d = new Date();
+    document.getElementById("topbarDow").textContent = DOW[d.getDay()]+"曜日";
+    document.getElementById("topbarDate").textContent = d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日";
+  }
+
+  // ---------- TODAY section ----------
+  // Checked-off items stay visible (struck through) for the rest of the day they were completed.
+  function keepsShowingToday(item){ return !item.done || item.updatedAt === todayStr(); }
+
+  function renderToday(){
+    var todayItems = state.todos.filter(function(x){ return isTodayTodo(x) && keepsShowingToday(x); });
+    todayItems.sort(function(a,b){ return (!!a.done) === (!!b.done) ? 0 : (a.done ? 1 : -1); });
+    var notDoneCount = todayItems.filter(function(x){ return !x.done; }).length;
+    var doneCount = todayItems.length - notDoneCount;
+    var todayEvents = state.events.filter(isTodayEvent).sort(function(a,b){
+      if(a.date !== b.date) return a.date.localeCompare(b.date);
+      return (a.time||"99:99").localeCompare(b.time||"99:99");
+    });
+
+    document.getElementById("statTodo").textContent = notDoneCount;
+    document.getElementById("statDone").textContent = doneCount;
+    document.getElementById("statEvent").textContent = todayEvents.length;
+    document.getElementById("countToday").textContent = notDoneCount;
+
+    var wrap = document.getElementById("todayTodoList");
+    if(todayItems.length===0){
+      wrap.innerHTML = '<div class="empty-note">今日やることはまだありません。上のフォームから追加するか、締め切りが今日までのタスクを作成すると自動的にここに表示されます。</div>';
+    } else {
+      wrap.innerHTML = todayItems.map(function(item){
+        var cls = classify(item.deadline, item.done);
+        var canUntoday = !item.done && item.today && !(item.deadline && item.deadline <= todayStr());
+        return '<div class="todo-item">' +
+          '<button class="todo-check '+(item.done?'checked':'')+'" data-act="toggle-done" data-id="'+item.id+'" aria-label="完了にする">'+(item.done?'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4.5 10.5l3.5 3.5 7.5-8" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'</button>' +
+          '<div class="todo-body">' +
+            '<div class="todo-title-row"><span class="todo-title '+(item.done?'done':'')+'">'+escapeHtml(item.title)+'</span></div>' +
+            (item.content ? '<div class="todo-content">'+escapeHtml(item.content)+'</div>' : '') +
+            '<div class="todo-meta">' + (item.deadline ? '<span class="badge '+BADGE_CLASS[cls]+'">'+mdLabel(item.deadline)+(BADGE_LABEL[cls]?' · '+BADGE_LABEL[cls]:'')+'</span>' : '') + '</div>' +
+          '</div>' +
+          '<div class="todo-actions">' + (canUntoday ? '<button class="btn btn-sm btn-ghost" data-act="untoday" data-id="'+item.id+'">今日から外す</button>' : '') + '</div>' +
+        '</div>';
+      }).join("");
+    }
+
+    var ewrap = document.getElementById("todayEventList");
+    if(todayEvents.length===0){
+      ewrap.innerHTML = '<div class="empty-note">今日までの予定はありません。</div>';
+    } else {
+      ewrap.innerHTML = todayEvents.map(function(ev){
+        var isPast = ev.date < todayStr();
+        return '<div class="event-row">' +
+          '<div class="event-time mono">'+escapeHtml(ev.time||"終日")+'</div>' +
+          '<div class="event-body"><div class="event-title-row"><span class="event-title">'+escapeHtml(ev.title)+'</span>' + (isPast ? '<span class="badge badge-overdue">'+mdLabel(ev.date)+'</span>' : '') + '</div>' + (ev.content?'<div class="event-content">'+escapeHtml(ev.content)+'</div>':'') + '</div>' +
+          '<div class="todo-actions">' +
+            '<button class="iconbtn" data-act="edit-event" data-id="'+ev.id+'" title="編集"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13.5 3.5l3 3L7 16H4v-3z" stroke-linejoin="round"/></svg></button>' +
+            '<button class="iconbtn" data-act="del-event" data-id="'+ev.id+'" title="削除"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h12M8 6V4.5h4V6M6 6l.7 10h6.6L14 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+          '</div>' +
+        '</div>';
+      }).join("");
+    }
+  }
+
+  document.getElementById("addTodayTodoBtn").addEventListener("click", function(){ openTodoForm(null, {today:true}); });
+  document.getElementById("addEventTodayBtn").addEventListener("click", function(){ openEventForm(todayStr()); });
+
+  // ---------- やることリスト (flat) ----------
+  function renderLists(){
+    var items = state.todos.filter(keepsShowingToday);
+    document.getElementById("countList").textContent = items.filter(function(t){return !t.done;}).length;
+
+    items.sort(function(a,b){
+      if(!!a.done !== !!b.done) return a.done ? 1 : -1;
+      if(a.deadline && b.deadline) return a.deadline.localeCompare(b.deadline);
+      if(a.deadline) return -1; if(b.deadline) return 1;
+      return a.createdAt.localeCompare(b.createdAt);
+    });
+
+    var cardsWrap = document.getElementById("listCards");
+    if(items.length===0){
+      cardsWrap.innerHTML = '<div class="empty-note">タスクはまだありません。「+ タスクを追加」から作成できます。</div>';
+    } else {
+      cardsWrap.innerHTML = items.map(function(item){
+        var cls = classify(item.deadline, item.done);
+        var cardCls = item.done ? "done-flag" : (item.today ? "today-flag" : (cls==="overdue" ? "overdue-flag" : ""));
+        return '<div class="todo-card '+cardCls+'">' +
+          '<div class="todo-card-top">' +
+            '<button class="todo-check '+(item.done?'checked':'')+'" data-act="toggle-done" data-id="'+item.id+'" aria-label="完了にする">'+(item.done?'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4.5 10.5l3.5 3.5 7.5-8" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'</button>' +
+            '<div class="todo-body">' +
+              '<div class="todo-title '+(item.done?'done':'')+'">'+escapeHtml(item.title)+'</div>' +
+              (item.content ? '<div class="todo-content">'+escapeHtml(item.content)+'</div>' : '') +
+            '</div>' +
+            '<div class="todo-actions">' +
+              '<button class="iconbtn" data-act="edit-todo" data-id="'+item.id+'" title="編集"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13.5 3.5l3 3L7 16H4v-3z" stroke-linejoin="round"/></svg></button>' +
+              '<button class="iconbtn" data-act="del-todo" data-id="'+item.id+'" title="削除"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h12M8 6V4.5h4V6M6 6l.7 10h6.6L14 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="todo-card-controls">' +
+            (item.deadline ? '<span class="badge '+BADGE_CLASS[cls]+'">'+mdLabel(item.deadline)+(BADGE_LABEL[cls]?' · '+BADGE_LABEL[cls]:'')+'</span>' : '<span class="badge badge-normal">期限なし</span>') +
+            (item.done ? '' : '<button class="btn btn-sm '+(item.today?'btn-primary':'')+'" data-act="toggle-today" data-id="'+item.id+'">'+(item.today?'今日から外す':'今日やる')+'</button>') +
+          '</div>' +
+        '</div>';
+      }).join("");
+    }
+  }
+
+  document.getElementById("addTodoBtn").addEventListener("click", function(){ openTodoForm(null); });
+
+  function openTodoForm(existing, opts){
+    opts = opts || {};
+    openForm({
+      title: existing ? "タスクを編集" : "タスクを追加",
+      submitLabel: "保存",
+      fields: [
+        { name:"title", label:"題名", type:"text", value: existing?existing.title:"", required:true },
+        { name:"content", label:"内容", type:"textarea", value: existing?existing.content:"" },
+        { name:"deadline", label:"締め切り", type:"date", value: existing?existing.deadline:"" }
+      ],
+      onSubmit: function(v){
+        if(!v.title) return;
+        if(existing){
+          existing.title=v.title; existing.content=v.content; existing.deadline=v.deadline; existing.updatedAt=todayStr();
+        } else {
+          state.todos.push({ id:genId(), title:v.title, content:v.content, deadline:v.deadline, today:!!opts.today, done:false, createdAt:todayStr(), updatedAt:todayStr() });
+        }
+        save(); renderAll();
+      }
+    });
+  }
+
+  function openEventForm(dateStr, existing){
+    openForm({
+      title: existing ? "予定を編集" : "予定を追加",
+      submitLabel: "保存",
+      fields: [
+        { name:"title", label:"題名", type:"text", value: existing?existing.title:"", required:true },
+        { name:"undecided", label:"日程は未定", type:"checkbox", value: existing ? !existing.date : false },
+        { name:"date", label:"日付", type:"date", value: existing?existing.date:dateStr },
+        { name:"time", label:"時刻（任意）", type:"time", value: existing?existing.time:"" },
+        { name:"content", label:"内容", type:"textarea", value: existing?existing.content:"" }
+      ],
+      onSubmit: function(v){
+        if(!v.title) return;
+        var date = v.undecided ? "" : v.date;
+        if(existing){ existing.title=v.title; existing.time=v.time; existing.date=date; existing.content=v.content; }
+        else { state.events.push({ id:genId(), date:date, time:v.time, title:v.title, content:v.content, createdAt:todayStr() }); }
+        save(); renderAll();
+      }
+    });
+    var undecidedEl = document.getElementById("f_undecided");
+    var dateEl = document.getElementById("f_date");
+    function syncDateField(){ dateEl.disabled = undecidedEl.checked; }
+    undecidedEl.addEventListener("change", syncDateField);
+    syncDateField();
+  }
+
+  // ---------- 予定 (Events) section ----------
+  function renderEvents(){
+    document.getElementById("showPastToggle").checked = !!state.showPastEvents;
+    var t = todayStr();
+    var list = state.events.filter(function(e){ return !e.date || state.showPastEvents || e.date >= t; });
+    list.sort(function(a,b){
+      var ad = a.date || "9999-99-99", bd = b.date || "9999-99-99";
+      if(ad !== bd) return ad.localeCompare(bd);
+      return (a.time||"99:99").localeCompare(b.time||"99:99");
+    });
+    document.getElementById("countEvents").textContent = list.length;
+
+    var wrap = document.getElementById("eventsList");
+    if(list.length===0){
+      wrap.innerHTML = '<div class="empty-note">予定はまだありません。「+ 予定を追加」から作成できます。</div>';
+      return;
+    }
+    wrap.innerHTML = list.map(function(ev){
+      var isToday = ev.date === t;
+      var isPast = !!ev.date && ev.date < t;
+      var dateLabel = ev.date ? mdLabel(ev.date)+(isToday?' · 今日':(isPast?' · 終了':'')) : '未定';
+      return '<div class="event-row">' +
+        '<div class="event-time mono">'+escapeHtml(ev.date ? (ev.time||"終日") : "-")+'</div>' +
+        '<div class="event-body">' +
+          '<div class="event-title-row"><span class="event-title">'+escapeHtml(ev.title)+'</span>' +
+            '<span class="badge '+(isToday?'badge-today':'badge-normal')+'">'+dateLabel+'</span></div>' +
+          (ev.content ? '<div class="event-content">'+escapeHtml(ev.content)+'</div>' : '') +
+        '</div>' +
+        '<div class="todo-actions">' +
+          '<button class="iconbtn" data-act="edit-event" data-id="'+ev.id+'" title="編集"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13.5 3.5l3 3L7 16H4v-3z" stroke-linejoin="round"/></svg></button>' +
+          '<button class="iconbtn" data-act="del-event" data-id="'+ev.id+'" title="削除"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h12M8 6V4.5h4V6M6 6l.7 10h6.6L14 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+  }
+  document.getElementById("addEventBtn").addEventListener("click", function(){ openEventForm(todayStr()); });
+  document.getElementById("showPastToggle").addEventListener("change", function(e){ state.showPastEvents = e.target.checked; save(); renderEvents(); });
+
+  // ---------- CALENDAR (side widget) ----------
+  function renderCalendar(){
+    var y = state.calendarYear, m = state.calendarMonth;
+    document.getElementById("calMonthLabel").textContent = y+"年 "+(m+1)+"月";
+    var dowRow = document.getElementById("calDowRow");
+    dowRow.innerHTML = DOW.map(function(d,i){ return '<div class="cal-dow '+(i===0?'sun':i===6?'sat':'')+'">'+d+'</div>'; }).join("");
+
+    var first = new Date(y,m,1);
+    var startOffset = first.getDay();
+    var gridStart = new Date(y,m,1-startOffset);
+    var cells = [];
+    for(var i=0;i<42;i++){ var d = new Date(gridStart); d.setDate(gridStart.getDate()+i); cells.push(d); }
+
+    var t = todayStr();
+    var grid = document.getElementById("calGrid");
+    grid.innerHTML = cells.map(function(d){
+      var ds = fmtDate(d);
+      var inMonth = d.getMonth()===m;
+      var evCount = state.events.filter(function(e){return e.date===ds;}).length;
+      var dlCount = state.todos.filter(function(x){return x.deadline===ds && !x.done;}).length;
+      var dow = d.getDay();
+      var dots = "";
+      if(evCount>0) dots += '<span class="cal-dot ev" title="予定 '+evCount+'件"></span>';
+      if(dlCount>0) dots += '<span class="cal-dot dl" title="締め切り '+dlCount+'件"></span>';
+      return '<div class="cal-cell '+(inMonth?'':'muted')+' '+(ds===t?'is-today':'')+' '+(ds===state.selectedDate?'is-selected':'')+'" data-date="'+ds+'" tabindex="0" role="button">' +
+        '<div class="cal-daynum '+(dow===0?'sun':dow===6?'sat':'')+'">'+d.getDate()+'</div>' +
+        '<div class="cal-dots">'+dots+'</div>' +
+      '</div>';
+    }).join("");
+    Array.prototype.forEach.call(grid.querySelectorAll(".cal-cell"), function(el){
+      el.addEventListener("click", function(){ state.selectedDate = el.dataset.date; save(); renderCalendar(); });
+    });
+
+    renderDayPanel();
+  }
+
+  function renderDayPanel(){
+    var ds = state.selectedDate;
+    var d = parseDateStr(ds);
+    var panel = document.getElementById("dayPanel");
+    var evs = state.events.filter(function(e){return e.date===ds;}).sort(function(a,b){return (a.time||"99:99").localeCompare(b.time||"99:99");});
+    var dls = state.todos.filter(function(x){return x.deadline===ds && !x.done;});
+
+    var html = '<h3>'+(d.getMonth()+1)+'月'+d.getDate()+'日</h3><div class="sub">'+DOW[d.getDay()]+'曜日</div>';
+    html += '<div class="daypanel-sec"><h4>予定</h4>';
+    html += '<div style="margin-bottom:8px;"><button class="btn btn-sm" id="dayAddEvent">+ 予定を追加</button></div>';
+    if(evs.length===0){ html += '<div class="empty-note">予定はありません</div>'; }
+    else { html += evs.map(function(ev){
+      return '<div class="event-row"><div class="event-time mono">'+escapeHtml(ev.time||"終日")+'</div>' +
+        '<div class="event-body"><div class="event-title">'+escapeHtml(ev.title)+'</div>'+(ev.content?'<div class="event-content">'+escapeHtml(ev.content)+'</div>':'')+'</div>' +
+        '<div class="todo-actions">' +
+          '<button class="iconbtn" data-act="edit-event" data-id="'+ev.id+'" title="編集"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13.5 3.5l3 3L7 16H4v-3z" stroke-linejoin="round"/></svg></button>' +
+          '<button class="iconbtn" data-act="del-event" data-id="'+ev.id+'" title="削除"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h12M8 6V4.5h4V6M6 6l.7 10h6.6L14 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+        '</div></div>';
+    }).join(""); }
+    html += '</div>';
+
+    html += '<div class="daypanel-sec"><h4>締め切りのタスク</h4>';
+    if(dls.length===0){ html += '<div class="empty-note">締め切りのタスクはありません</div>'; }
+    else { html += dls.map(function(item){
+      return '<div class="todo-item">' +
+        '<button class="todo-check '+(item.done?'checked':'')+'" data-act="toggle-done" data-id="'+item.id+'" aria-label="完了にする">'+(item.done?'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4.5 10.5l3.5 3.5 7.5-8" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'</button>' +
+        '<div class="todo-body"><div class="todo-title-row"><span class="todo-title '+(item.done?'done':'')+'" style="font-size:13.5px;">'+escapeHtml(item.title)+'</span></div></div>' +
+      '</div>';
+    }).join(""); }
+    html += '</div>';
+
+    panel.innerHTML = html;
+    var addBtn = document.getElementById("dayAddEvent");
+    if(addBtn) addBtn.addEventListener("click", function(){ openEventForm(ds); });
+  }
+
+  document.getElementById("calPrev").addEventListener("click", function(){ state.calendarMonth--; if(state.calendarMonth<0){state.calendarMonth=11; state.calendarYear--;} save(); renderCalendar(); });
+  document.getElementById("calNext").addEventListener("click", function(){ state.calendarMonth++; if(state.calendarMonth>11){state.calendarMonth=0; state.calendarYear++;} save(); renderCalendar(); });
+  document.getElementById("calTodayBtn").addEventListener("click", function(){ var t=parseDateStr(todayStr()); state.calendarYear=t.getFullYear(); state.calendarMonth=t.getMonth(); state.selectedDate=todayStr(); save(); renderCalendar(); });
+
+  // ---------- MEMO ----------
+  function renderMemo(){
+    var memos = state.memos.slice().sort(function(a,b){ return b.updatedAt.localeCompare(a.updatedAt); });
+    document.getElementById("countMemo").textContent = memos.length;
+    var grid = document.getElementById("memoGrid");
+    if(memos.length===0){ grid.innerHTML = '<div class="empty-note">メモはまだありません。上のフォームから追加できます。</div>'; return; }
+    grid.innerHTML = memos.map(function(mm){
+      return '<div class="memo-card">' +
+        '<h4>'+escapeHtml(mm.title)+'</h4>' +
+        '<p>'+escapeHtml(mm.content)+'</p>' +
+        '<div class="foot"><span class="updated mono">'+escapeHtml(mm.updatedAt)+'</span>' +
+        '<div class="todo-actions">' +
+          '<button class="iconbtn" data-act="edit-memo" data-id="'+mm.id+'" title="編集"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13.5 3.5l3 3L7 16H4v-3z" stroke-linejoin="round"/></svg></button>' +
+          '<button class="iconbtn" data-act="del-memo" data-id="'+mm.id+'" title="削除"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h12M8 6V4.5h4V6M6 6l.7 10h6.6L14 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+        '</div></div>' +
+      '</div>';
+    }).join("");
+  }
+  document.getElementById("memoAddForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var ti = document.getElementById("memoTitleInput"), co = document.getElementById("memoContentInput");
+    if(!ti.value.trim()) return;
+    state.memos.push({ id:genId(), title:ti.value.trim(), content:co.value.trim(), updatedAt:todayStr() });
+    ti.value=""; co.value="";
+    save(); renderMemo();
+  });
+
+  function openMemoForm(existing){
+    openForm({ title:"メモを編集", submitLabel:"保存",
+      fields:[ {name:"title", label:"タイトル", type:"text", value:existing.title, required:true}, {name:"content", label:"内容", type:"textarea", value:existing.content, rows:6} ],
+      onSubmit:function(v){ existing.title=v.title; existing.content=v.content; existing.updatedAt=todayStr(); save(); renderMemo(); }
+    });
+  }
+
+  // ---------- やったことリスト ----------
+  // Completed tasks are kept for 10 days after completion, then removed for good.
+  function pruneOldDone(){
+    var cutoff = addDays(todayStr(), -10);
+    var before = state.todos.length;
+    state.todos = state.todos.filter(function(t){ return !(t.done && t.updatedAt && t.updatedAt <= cutoff); });
+    if(state.todos.length !== before) save();
+  }
+
+  function renderDone(){
+    pruneOldDone();
+    var items = state.todos.filter(function(t){ return t.done; });
+    items.sort(function(a,b){
+      var av = a.doneAt || Date.parse(a.updatedAt) || 0;
+      var bv = b.doneAt || Date.parse(b.updatedAt) || 0;
+      return bv - av;
+    });
+    document.getElementById("countDone").textContent = items.length;
+
+    var wrap = document.getElementById("doneCards");
+    if(items.length===0){
+      wrap.innerHTML = '<div class="empty-note">まだ完了したタスクはありません。</div>';
+      return;
+    }
+    wrap.innerHTML = items.map(function(item){
+      return '<div class="todo-card archived">' +
+        '<div class="todo-card-top">' +
+          '<div class="todo-body">' +
+            '<div class="todo-title done">'+escapeHtml(item.title)+'</div>' +
+            (item.content ? '<div class="todo-content">'+escapeHtml(item.content)+'</div>' : '') +
+          '</div>' +
+          '<div class="todo-actions">' +
+            '<button class="iconbtn" data-act="del-todo" data-id="'+item.id+'" title="削除"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h12M8 6V4.5h4V6M6 6l.7 10h6.6L14 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="todo-card-controls">' +
+          (item.deadline ? '<span class="badge badge-done">'+mdLabel(item.deadline)+'</span>' : '') +
+          '<button class="btn btn-sm" data-act="restore-todo" data-id="'+item.id+'">やることリストに戻す</button>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+  }
+
+  // ---------- Global action delegation ----------
+  document.addEventListener("click", function(e){
+    var el = e.target.closest("[data-act]");
+    if(!el) return;
+    var act = el.dataset.act, id = el.dataset.id;
+    if(act==="toggle-done"){
+      var todo = state.todos.find(function(x){return x.id===id;}); if(!todo) return;
+      todo.done = !todo.done; todo.updatedAt = todayStr(); todo.doneAt = todo.done ? Date.now() : null; save(); renderAll();
+    } else if(act==="toggle-today"){
+      var t2 = state.todos.find(function(x){return x.id===id;}); if(!t2) return;
+      t2.today = !t2.today; save(); renderAll();
+    } else if(act==="untoday"){
+      var t3 = state.todos.find(function(x){return x.id===id;}); if(!t3) return;
+      t3.today = false; save(); renderAll();
+    } else if(act==="restore-todo"){
+      var t5 = state.todos.find(function(x){return x.id===id;}); if(!t5) return;
+      t5.done = false; t5.today = false; t5.doneAt = null; t5.updatedAt = todayStr(); save(); renderAll();
+    } else if(act==="edit-todo"){
+      var t4 = state.todos.find(function(x){return x.id===id;}); if(t4) openTodoForm(t4);
+    } else if(act==="del-todo"){
+      openConfirm("このタスクを削除しますか？", function(){ state.todos = state.todos.filter(function(x){return x.id!==id;}); save(); renderAll(); }, {title:"タスクを削除", okLabel:"削除する", danger:true});
+    } else if(act==="edit-event"){
+      var ev = state.events.find(function(x){return x.id===id;}); if(ev) openEventForm(ev.date, ev);
+    } else if(act==="del-event"){
+      openConfirm("この予定を削除しますか？", function(){ state.events = state.events.filter(function(x){return x.id!==id;}); save(); renderAll(); }, {title:"予定を削除", okLabel:"削除する", danger:true});
+    } else if(act==="edit-memo"){
+      var mm = state.memos.find(function(x){return x.id===id;}); if(mm) openMemoForm(mm);
+    } else if(act==="del-memo"){
+      openConfirm("このメモを削除しますか？", function(){ state.memos = state.memos.filter(function(x){return x.id!==id;}); save(); renderMemo(); }, {title:"メモを削除", okLabel:"削除する", danger:true});
+    }
+  });
+
+  function renderAll(){
+    renderHeaderDate();
+    renderToday();
+    renderLists();
+    renderEvents();
+    renderCalendar();
+    renderMemo();
+    renderDone();
+  }
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
