@@ -143,6 +143,7 @@
     .layout{ grid-template-columns:1fr; grid-template-areas: "main"; padding:20px 20px 60px; gap:28px; }
     .cal-col{ display:none; }
     .topbar{ padding:20px 20px 16px; }
+    .sync-status{ flex-basis:100%; }
   }
 
   section{ scroll-margin-top:20px; }
@@ -270,8 +271,8 @@
   @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
 
   /* ---- Sync status ---- */
-  .sync-ctl{ display:flex; align-items:center; gap:8px; }
-  .sync-status{ font-size:11.5px; color:var(--ink-soft); display:flex; align-items:center; gap:5px; }
+  .sync-ctl{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .sync-status{ font-size:11.5px; color:var(--ink-soft); display:flex; align-items:center; gap:5px; white-space:nowrap; }
   .sync-dot{ width:7px; height:7px; border-radius:50%; background:var(--ink-faint); flex-shrink:0; }
   .sync-dot.on{ background:var(--done); }
   .sync-dot.busy{ background:var(--warn); }
