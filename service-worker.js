@@ -1,5 +1,5 @@
 // Bump this on every deploy so old clients pick up the new app shell.
-const CACHE_NAME = "techo-app-v1";
+const CACHE_NAME = "techo-app-v2";
 const APP_SHELL = [
   "./",
   "./index.html",

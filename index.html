@@ -539,9 +539,11 @@ if("serviceWorker" in navigator){
             var remote = snap.data();
             if(remote && remote.data){
               applyingRemote = true;
-              state = JSON.parse(remote.data);
-              try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
-              renderAll();
+              try{
+                state = JSON.parse(remote.data);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                renderAll();
+              }catch(e){}
               applyingRemote = false;
             }
           } else {
